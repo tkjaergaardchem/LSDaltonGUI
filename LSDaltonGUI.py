@@ -1,13 +1,40 @@
+#    LSDaltonGUI
+#    Copyright May 2017 Thomas Kjærgaard 
+#
+#    LSDaltonGUI is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU Lesser General Public
+#    License as published by the Free Software Foundation; either
+#    version 2.1 of the License, or (at your option) any later version.
+#
+#    LSDaltonGUI is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#    Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public
+#    License along with this library; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+#    USA
+#
+#    The the GNU Lesser General Public License is placed in file License
+#    For electronic contact: Thomas Kjaergaard tkjaergaardchem@gmail.com
+#
+
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 import sys
+
+#Icons have been imported from https://github.com/yusukekamiyamane/fugue-icons
+
+#LSDalton GUI About Dialog Box 
 class AboutDialog(QDialog):
     
     def __init__(self, *args, **kwargs):
         super(AboutDialog, self).__init__(*args, **kwargs)
 
+        #Titel
         self.setWindowTitle("About the LSDaltonGUI")
 
         title = QLabel("LSDaltonGUI")
@@ -19,28 +46,26 @@ class AboutDialog(QDialog):
         title.setAlignment(Qt.AlignHCenter)
         layout.addWidget(title)
 
+        #Logo
         logo = QLabel()
         watermark = QPixmap("john-dalton.jpg")
         newPixmap = watermark.scaled(QSize(100,100),Qt.KeepAspectRatio)
         logo.setPixmap(newPixmap)        
-#        widgetDal.setPixmap(QPixmap("john-dalton.jpg") )        
-#        widgetDal.setScaledContents(True)
         logo.setAlignment(Qt.AlignHCenter)
         layout.addWidget(logo)
 
+        #Version Number
         n1 = QLabel("Version 1.0.0.0")
         n1.setAlignment(Qt.AlignHCenter)
         layout.addWidget(n1)
 
+        #Author 
         n2 = QLabel("Made by Thomas Kjaergaard")
         n2.setAlignment(Qt.AlignHCenter)
         layout.addWidget(n2)
 
-        #Possible to do this instead
-#        for i in range(0,layout.count()):
-#            layout.itemAt(i)setAlignment(Qt.AlignHCenter)
-        
-        QBtn = QDialogButtonBox.Ok # No Cancel
+        #OK and Cancel button
+        QBtn = QDialogButtonBox.Ok # No Cancel 
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
@@ -48,6 +73,7 @@ class AboutDialog(QDialog):
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
 
+# **WAVE FUNCTION TAB        
 class WaveFunc(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -55,17 +81,20 @@ class WaveFunc(QWidget):
 
         layoutWF = QVBoxLayout()
 
-        layoutWF.addWidget(QLabel("Select the SCF Wave Function Model"))
+        layoutWF.addWidget(QLabel("Select the Self-Consistent Field (SCF) Wave Function Model"))
         #Consider QbuttonGroup to have HF and DFT buttons be exclusive Check Boxes
         
         self.widgetHF = QCheckBox("Hartree-Fock (HF)")
-        self.widgetHF.setStatusTip("The default is to use Hartree-Fock (HF) SCF method")
+        self.widgetHF.setStatusTip("Use the Hartree-Fock (HF) SCF method, recommended for Correlated calculations (see **CC and **DEC)")
+        self.widgetHF.setWhatsThis("Whats This2")
         self.widgetHF.setChecked(True)
         self.widgetHF.stateChanged.connect(self.wavefunc_state2)
         layoutWF.addWidget(self.widgetHF)
 
         self.widgetDFT = QCheckBox("Density Functional Theory (DFT)")
-        self.widgetDFT.setStatusTip("The default is Hartree-Fock (HF) when not checked")
+        self.widgetDFT.setStatusTip("Use DFT as the SCF model, requires the specification of a DFT exchange-correlation (XC) functional")
+#        self.widgetDFT.setToolTip("Use DFT as the SCF model")
+        self.widgetDFT.setWhatsThis("Whats This1")
         self.widgetDFT.stateChanged.connect(self.wavefunc_state)
         layoutWF.addWidget(self.widgetDFT)
 
@@ -111,6 +140,7 @@ class WaveFunc(QWidget):
         print(s)
 
             
+# **INTEGRAL TAB        
 class Integral(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -150,6 +180,7 @@ class Integral(QWidget):
             print("remove DENSFIT")
             
         
+# **Other TAB        
 class Other(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -267,13 +298,13 @@ class Other(QWidget):
         print(s)
 
         
-# Subclass QMainWindow to customise your application's main window
+# The Main GUI 
+# Subclass QMainWindow to customise the application's main window
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.outfile = open('GUILSDALTON.INP', 'w') 
-        # set title of window
         self.setWindowTitle("LSDalton GUI")
 
         #create instance of toolbar 
@@ -281,15 +312,21 @@ class MainWindow(QMainWindow):
         toolbar.setIconSize(QSize(16,16))
         #add toolbar to qmainwindow
         self.addToolBar(toolbar)
-        
+
+        #Create instance of menu
+        menu = self.menuBar()
+        #add menu to menu -- name of menu
+        #The & define keyboard shortcuts to menu entry
+        #Here "F" selects this File menu
+        file_menu = menu.addMenu(u"&File")
+
         #Qaction instance create from Q object to act as parent of the action
         #here the mainwindow is passed as the parent action
-        #Icons from fugue.......        
         save_action = QAction(QIcon("disk-black.png"),"Save", self)
         #
         save_action.setStatusTip("Save LSDALTON.INP file")
         #"triggered" signal is sent when Qaction is clicked
-#        save_action.triggered.connect(lambda outfile=outfile: self.onSaveLSDALTON(outfile))
+        #save_action.triggered.connect(lambda outfile=outfile: self.onSaveLSDALTON(outfile))
         save_action.triggered.connect(self.onSaveLSDALTON)
         #add key short-cut to action
         #save_action.setShortcut(QKeySequence("Ctrl+s"))
@@ -299,12 +336,29 @@ class MainWindow(QMainWindow):
         #add button to toolbar 
         toolbar.addAction(save_action)
 
+        #add action (same as for toolbar)
+        file_menu.addAction(save_action)
+        #horisontal line to seperate menu items
+        #        file_menu.addSeparator()
+        #        file_submenu = file_menu.addMenu("Submenu")
+        #        file_submenu.addAction(save_action)
+
+        #Whats this
+        self.WhatsThisCustomAction = QWhatsThis.createAction() #QAction(QIcon("cursor-question.png"),"Help Cursor", self)
+        self.WhatsThisCustomAction.setStatusTip("Obtain additional info for each keyword")
+        #WhatsThisCustomAction.triggered.connect(self.WhatIsThisModeCustomAction.enterWhatsThisMode())
+        self.WhatsThisCustomAction.setCheckable(True)
+        toolbar.addAction(self.WhatsThisCustomAction)
+        
+        
         help_menu = self.menuBar().addMenu("&Help")
         
         about_action = QAction(QIcon("question-white.png"),"About LSDaltonGUI", self)
         about_action.setStatusTip("Find out more about LSDaltonGUI")
         about_action.triggered.connect(self.about)
         help_menu.addAction(about_action)
+        help_menu.addAction(self.WhatsThisCustomAction)
+        toolbar.addAction(about_action)
 
         
         #adds a label with "Hello" along with Checkbox
@@ -314,21 +368,6 @@ class MainWindow(QMainWindow):
         #add status bar
         self.setStatusBar(QStatusBar(self))
 
-        #Create instance of menu
-        menu = self.menuBar()
-        #add menu to menu -- name of menu
-        #The & define keyboard shortcuts to menu entry
-        #Here "F" selects this File menu
-        file_menu = menu.addMenu(u"&File")
-        #add action (same as for toolbar)
-        file_menu.addAction(save_action)
-
-        #horisontal line to seperate menu items
-        file_menu.addSeparator()
-
-
-        file_submenu = file_menu.addMenu("Submenu")
-        file_submenu.addAction(save_action)
 
 
         layoutMain = QHBoxLayout()
@@ -450,7 +489,11 @@ class MainWindow(QMainWindow):
 #    def my_custom_fn(self, a):
 #        print(a)
 
-
+    def WhatIsThisModeCustomActionF(self, s):
+        if(s == Qt.Checked):
+            self.WhatIsThisModeCustomAction.leaveWhatsThisMode()
+        else:
+            self.WhatIsThisModeCustomAction.enterWhatsThisMode()
             
     def onSaveLSDALTON(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save LSDALTON.INP as", "",
@@ -488,8 +531,8 @@ app.exec_()
 
 # TODO
 #1. Done
-#2. Add QWhatsThis ( to get more detailed info - citations etc. )
-# Update Display func
+#2. Done
+#  Update Display func
 # add text to GUILSDALTON.INP (Add Block of Code to LSDALTON.INP file) - Structured!!
 #            addKeyword(".DENSFIT")
 #            addKeyword(".CONVDYN",Real)
