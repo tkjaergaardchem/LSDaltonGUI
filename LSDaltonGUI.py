@@ -26,6 +26,11 @@ from PyQt5.QtCore import *
 import sys
 
 #Icons have been imported from https://github.com/yusukekamiyamane/fugue-icons
+class QHLine(QFrame):
+    def __init__(self, *args, **kwargs):
+        super(QHLine, self).__init__(*args, **kwargs)
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
 
 #LSDalton GUI About Dialog Box 
 class AboutDialog(QDialog):
@@ -77,10 +82,14 @@ class WaveFunc(QWidget):
 
     def __init__(self, *args, **kwargs):
         super(WaveFunc, self).__init__(*args, **kwargs)
+        #toplevel layout which have a single widget the scroll_widget
+        #which contains the layoutWF layout 
+        self.scroll_layoutWF = QVBoxLayout()
+        self.layoutWF = QVBoxLayout()
+        self.scroll_widgetWF = QWidget(self)
+        self.scroll_widgetWF.setLayout(self.layoutWF)
 
-        layoutWF = QVBoxLayout()
-
-        layoutWF.addWidget(QLabel("Select the Self-Consistent Field (SCF) Wave Function Model"))
+        self.layoutWF.addWidget(QLabel("Select the Self-Consistent Field (SCF) Wave Function Model"))
         #Consider QbuttonGroup to have HF and DFT buttons be exclusive Check Boxes
         
         self.widgetHF = QCheckBox("Hartree-Fock (HF)")
@@ -88,14 +97,14 @@ class WaveFunc(QWidget):
         self.widgetHF.setWhatsThis("Whats This2")
         self.widgetHF.setChecked(True)
         self.widgetHF.stateChanged.connect(self.wavefunc_state2)
-        layoutWF.addWidget(self.widgetHF)
+        self.layoutWF.addWidget(self.widgetHF)
 
         self.widgetDFT = QCheckBox("Density Functional Theory (DFT)")
         self.widgetDFT.setStatusTip("Use DFT as the SCF model, requires the specification of a DFT exchange-correlation (XC) functional")
 #        self.widgetDFT.setToolTip("Use DFT as the SCF model")
         self.widgetDFT.setWhatsThis("Whats This1")
         self.widgetDFT.stateChanged.connect(self.wavefunc_state)
-        layoutWF.addWidget(self.widgetDFT)
+        self.layoutWF.addWidget(self.widgetDFT)
 
         self.widget4 = QComboBox()
         self.widget4.addItems(["LDA","SLATER","B3LYP"])
@@ -105,12 +114,135 @@ class WaveFunc(QWidget):
         #Signal
         self.widget4.currentIndexChanged[str].connect(self.DFTFUNCTextChanged)
         self.widget4.setVisible(False)
-            
-        layoutWF.addWidget(self.widget4)
-        layoutWF.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+        self.layoutWF.addWidget(self.widget4)
 
-        self.setLayout(layoutWF)
+        self.layoutWF.addWidget(QHLine())
+        
+        #*DENSOPT
+        self.layoutWF.addWidget(QLabel("Density Matrix Optimization (SCF optimization) Keywords:"))
 
+        self.widgetConvdyn = QCheckBox("Dynamic Density Optimization Threshold (recommended for large molecules)")
+        self.widgetConvdyn.stateChanged.connect(self.convdyn_select)
+        self.layoutWF.addWidget(self.widgetConvdyn)
+
+        self.widgetConvdynL = QComboBox()
+        self.widgetConvdynL.addItems(["SLOPP","STAND","TIGHT","VTIGH"])
+        #Set the default value to point to "STAND" 
+        self.widgetConvdynL.setCurrentIndex(1)
+        self.widgetConvdynL.currentIndexChanged[str].connect(self.convdyn_selectL)
+        self.layoutWF.addWidget(self.widgetConvdynL)
+
+        self.widgetConvthr = QCheckBox("Static Density Optimization Threshold (recommended for small molecules)")
+        self.widgetConvthr.stateChanged.connect(self.convthr_select)
+        self.layoutWF.addWidget(self.widgetConvthr)
+
+        self.widgetConvthrD = QDoubleSpinBox()
+        self.widgetConvthrD.setMinimum(0.0)
+        self.widgetConvthrD.setMaximum(10000.0)
+        self.widgetConvthrD.setDecimals(10)
+        self.widgetConvthrD.setValue(0.0001)
+        self.widgetConvthrD.setSingleStep(0.00000001)
+        self.widgetConvthrD.valueChanged.connect(self.convthr_value)
+        self.layoutWF.addWidget(self.widgetConvthrD)
+
+        self.layoutWF.addWidget(QHLine())
+
+        self.layoutWF.addWidget(QLabel("Initial Starting Guess for Density Optimization:"))
+
+        self.widgetStart = QCheckBox("Choose Starting Guess for Density Optimization")
+        self.widgetStart.stateChanged.connect(self.start_select)
+        self.layoutWF.addWidget(self.widgetStart)
+
+        self.widgetStartL = QComboBox()
+        self.widgetStartL.addItems(["H1DIAG","ATOMS","TRILEVEL"])
+        #Set the default value to point to "ATOMS" 
+        self.widgetStartL.setCurrentIndex(1)
+        self.widgetStartL.currentIndexChanged[str].connect(self.start_selectL)
+        self.layoutWF.addWidget(self.widgetStartL)
+
+        self.layoutWF.addWidget(QHLine())
+
+        self.layoutWF.addWidget(QLabel("Density Optimization Algorithm:"))
+
+        self.widgetARH = QCheckBox("Augmented Roothaan-Hall optimization (Recommended and default)")
+        self.widgetARH.stateChanged.connect(self.ARH_select)
+        self.layoutWF.addWidget(self.widgetARH)
+
+        self.widgetARHD = QCheckBox("Augmented Roothaan-Hall optimization using Davidson Solver")
+        self.widgetARHD.stateChanged.connect(self.ARHD_select)
+        self.layoutWF.addWidget(self.widgetARHD)
+
+        self.widgetRH = QCheckBox("Roothaan-Hall optimization (standard method in many codes)")
+        self.widgetRH.stateChanged.connect(self.RH_select)
+        self.layoutWF.addWidget(self.widgetRH)
+
+        self.widgetDIIS = QCheckBox("Activate Direct inversion in the iterative subspace (DIIS) accelaration")
+        self.widgetDIIS.stateChanged.connect(self.DIIS_select)
+        self.layoutWF.addWidget(self.widgetDIIS)
+
+        self.widgetrestart = QCheckBox("Restart from previous density matrix dens.restart")
+        self.widgetrestart.stateChanged.connect(self.restart_select)
+        self.layoutWF.addWidget(self.widgetrestart)
+        
+        self.layoutWF.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+
+        self.layoutWF.addWidget(QHLine())
+
+        #*DFT INPUT
+        self.layoutWF.addWidget(QLabel("Density Functional Theory Input: Nummerical Grid Input"))
+        self.layoutWF.addWidget(QLabel("TurboMole Type Grids"))
+
+        self.widgetGRID1 = QCheckBox("TurboMole Type Grid Number 1 (Sloppy)")
+        self.widgetGRID1.stateChanged.connect(self.grid1_select)
+        self.layoutWF.addWidget(self.widgetGRID1)
+        
+        self.widgetGRID2 = QCheckBox("TurboMole Type Grid Number 2")
+        self.widgetGRID2.stateChanged.connect(self.grid2_select)
+        self.layoutWF.addWidget(self.widgetGRID2)
+        
+        self.widgetGRID3 = QCheckBox("TurboMole Type Grid Number 3")
+        self.widgetGRID3.stateChanged.connect(self.grid3_select)
+        self.layoutWF.addWidget(self.widgetGRID3)
+        
+        self.widgetGRID4 = QCheckBox("TurboMole Type Grid Number 4")
+        self.widgetGRID4.stateChanged.connect(self.grid4_select)
+        self.layoutWF.addWidget(self.widgetGRID4)
+        
+        self.widgetGRID5 = QCheckBox("TurboMole Type Grid Number 5 (Tight)")
+        self.widgetGRID5.stateChanged.connect(self.grid5_select)
+        self.layoutWF.addWidget(self.widgetGRID5)
+
+        self.layoutWF.addWidget(QLabel("Dalton Grids"))
+
+        self.widgetGRIDULTRAC = QCheckBox("Ultra Coarse grid")
+        self.widgetGRIDULTRAC.stateChanged.connect(self.gridULTRAC_select)
+        self.layoutWF.addWidget(self.widgetGRIDULTRAC)
+
+        self.widgetGRIDCOARSE = QCheckBox("Coarse grid")
+        self.widgetGRIDCOARSE.stateChanged.connect(self.gridCOARSE_select)
+        self.layoutWF.addWidget(self.widgetGRIDCOARSE)
+
+        self.widgetGRIDNORMAL = QCheckBox("normal grid")
+        self.widgetGRIDNORMAL.stateChanged.connect(self.gridNORMAL_select)
+        self.layoutWF.addWidget(self.widgetGRIDNORMAL)
+
+        self.widgetGRIDFINE = QCheckBox("fine grid")
+        self.widgetGRIDFINE.stateChanged.connect(self.gridFINE_select)
+        self.layoutWF.addWidget(self.widgetGRIDFINE)
+
+        self.widgetGRIDULTRAF = QCheckBox("Ultra fine grid")
+        self.widgetGRIDULTRAF.stateChanged.connect(self.gridULTRAF_select)
+        self.layoutWF.addWidget(self.widgetGRIDULTRAF)
+        
+        self.layoutWF.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+        #Scroll area which contains scroll_widget which contains the
+        #layoutWF layout
+        self.scroll_areaWF = QScrollArea()
+        self.scroll_areaWF.setWidget(self.scroll_widgetWF)
+        self.scroll_layoutWF.addWidget(self.scroll_areaWF)
+        
+        self.setLayout(self.scroll_layoutWF)
+        
     def wavefunc_state(self, s):
         if(s == Qt.Checked):
             #Change to DFT with functional 
@@ -145,6 +277,289 @@ class WaveFunc(QWidget):
         self.parent().parent().AddText(".DFT","**WAVE FUNCTION")
         self.parent().parent().AddText(s,".DFT")
         
+    def convdyn_select(self, s):
+#            self.widgetConvdyn.setChecked(True)
+        if(s == Qt.Checked):
+            if(self.widgetConvthr.isChecked()):
+                self.widgetConvthr.setChecked(False)
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".CONVDYN","*DENSOPT")
+            self.parent().parent().AddText(self.widgetConvdynL.currentText(),".CONVDYN")
+        else:
+            self.parent().parent().RemoveTextAndNext(".CONVDYN")
+
+    def convdyn_selectL(self,s):
+        if(self.widgetConvdyn.isChecked()):
+            self.parent().parent().RemoveTextAndNext(".CONVDYN")
+            self.parent().parent().AddText(".CONVDYN","*DENSOPT")
+            self.parent().parent().AddText(s,".CONVDYN")
+
+    def convthr_select(self, s):
+        if(s == Qt.Checked):
+            if(self.widgetConvdyn.isChecked()):
+                self.widgetConvdyn.setChecked(False)
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".CONVTHR","*DENSOPT")
+            self.parent().parent().AddDouble(str(self.widgetConvthrD.value()),".CONVTHR")
+        else:
+            self.parent().parent().RemoveTextAndNext(".CONVTHR")
+
+    def convthr_value(self, d):
+        if(self.widgetConvthr.isChecked()):
+            self.parent().parent().RemoveTextAndNext(".CONVTHR")
+            self.parent().parent().AddText(".CONVTHR","*DENSOPT")
+            self.parent().parent().AddDouble(str(d),".CONVTHR")
+
+    def start_select(self, s):
+        if(s == Qt.Checked):
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".START","*DENSOPT")
+            self.parent().parent().AddText(self.widgetStartL.currentText(),".START")
+        else:
+            self.parent().parent().RemoveTextAndNext(".START")
+
+    def start_selectL(self,s):
+        if(self.widgetStart.isChecked()):
+            self.parent().parent().RemoveTextAndNext(".START")
+            self.parent().parent().AddText(".START","*DENSOPT")
+            self.parent().parent().AddText(s,".START")
+
+    def ARH_select(self, s):
+        if(s == Qt.Checked):
+            self.widgetARHD.setChecked(False)
+            self.widgetRH.setChecked(False)
+            self.widgetDIIS.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".ARH","*DENSOPT")
+        else:
+            self.parent().parent().RemoveText(".ARH")
+
+    def ARHD_select(self, s):
+        if(s == Qt.Checked):
+            self.widgetARH.setChecked(False)
+            self.widgetRH.setChecked(False)
+            self.widgetDIIS.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".ARH DAVID","*DENSOPT")
+        else:
+            self.parent().parent().RemoveText(".ARH DAVID")
+
+    def RH_select(self, s):
+        if(s == Qt.Checked):
+            self.widgetARH.setChecked(False)
+            self.widgetARHD.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".RH","*DENSOPT")
+        else:
+            self.parent().parent().RemoveText(".RH")
+
+    def DIIS_select(self, s):
+        if(s == Qt.Checked):
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".DIIS","*DENSOPT")
+        else:
+            self.parent().parent().RemoveText(".DIIS")
+
+    def restart_select(self, s):
+        if(s == Qt.Checked):
+            self.parent().parent().AddNewBlock("*DENSOPT")
+            self.parent().parent().AddText(".RESTART","*DENSOPT")
+        else:
+            self.parent().parent().RemoveText(".RESTART")
+
+    def grid1_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID1","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".GRID1")
+
+    def grid2_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID2","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".GRID2")
+
+    def grid3_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID2,
+                    self.widgetGRID1,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID3","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".GRID3")
+
+    def grid4_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID2,
+                    self.widgetGRID1,
+                    self.widgetGRID3,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID4","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".GRID4")
+
+    def grid5_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID2,
+                    self.widgetGRID1,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID5","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".GRID5")
+
+    def gridULTRAC_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".ULTRAC","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".ULTRAC")
+
+    def gridCOARSE_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".COARSE","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".COARSE")
+
+    def gridNORMAL_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDFINE,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".NORMAL","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".NORMAL")
+
+    def gridFINE_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDULTRAF]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".FINE","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".FINE")
+
+    def gridULTRAF_select(self, s):
+        if(s == Qt.Checked):
+            grids = [self.widgetGRID1,
+                    self.widgetGRID2,
+                    self.widgetGRID3,
+                    self.widgetGRID4,
+                    self.widgetGRID5,
+                    self.widgetGRIDULTRAC,
+                    self.widgetGRIDCOARSE,
+                    self.widgetGRIDNORMAL,
+                    self.widgetGRIDFINE]
+            for grid in grids:
+                grid.setChecked(False)
+
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".ULTRAF","*DFT INPUT")
+        else:
+            self.parent().parent().RemoveText(".ULTRAF")
+
             
 # **INTEGRAL TAB        
 class Integral(QWidget):
@@ -385,13 +800,13 @@ class MainWindow(QMainWindow):
 
         layout1 = QVBoxLayout()
 
-        widgetDal = QLabel()
-        watermark = QPixmap("john-dalton.jpg")
-        newPixmap = watermark.scaled(QSize(50,50),Qt.KeepAspectRatio)
-        widgetDal.setPixmap(newPixmap)        
+#        widgetDal = QLabel()
+#        watermark = QPixmap("john-dalton.jpg")
+#        newPixmap = watermark.scaled(QSize(50,50),Qt.KeepAspectRatio)
+#        widgetDal.setPixmap(newPixmap)        
 #        widgetDal.setPixmap(QPixmap("john-dalton.jpg") )        
 #        widgetDal.setScaledContents(True)
-        layout1.addWidget(widgetDal)
+#        layout1.addWidget(widgetDal)
 
 
         widget = QLabel("LSDALTON.INP")
@@ -606,6 +1021,23 @@ class MainWindow(QMainWindow):
         f.close()
         self.UpdateWidgetOutFile()
 
+    def AddDouble(self, d, s2):
+        self.outfile = open('GUILSDALTON.INP', 'r') 
+        f=open('TMPGUILSDALTON.INP', 'r+')
+        f.seek(0)
+        for line in self.outfile:
+            if(s2 in line):
+                f.write(line)
+                f.write(d)
+                f.write("\n")
+            else:
+                f.write(line)
+        f.truncate()
+        self.outfile.close()
+        self.CopyTmpFileToFile(f)
+        f.close()
+        self.UpdateWidgetOutFile()
+
     def UpdateWidgetOutFile(self):
         self.widgetOutFile.clear()
         self.outfile = open('GUILSDALTON.INP', 'r') 
@@ -632,16 +1064,14 @@ app.exec_()
 # TODO
 #1. Done
 #2. Done
-#  Update Display func
-# add text to GUILSDALTON.INP (Add Block of Code to LSDALTON.INP file) - Structured!!
-#            addKeyword(".DENSFIT")
-#            addKeyword(".CONVDYN",Real)
-#            etc 
-# remove text to GUILSDALTON.INP (Remove Block of Code to LSDALTON.INP file)
-# 
-# Read xyz file and Create MOLECULE.INP
-# Run lsdalton.x (provide path to lsdalton.x, path to basis set)
-# display run command
+#3. Done
+#4. Done
+#5. Keyword and Threshold or     addTextReal(".CONVTHR",Real)
+#6. Keyword and List Variable    addKeyword(".CONVDYN",List)
+#6. SubTab *DENSOPT
+#7. Read xyz file and Create MOLECULE.INP
+#8. Run lsdalton.x (provide path to lsdalton.x, path to basis set)
+#9.  display run command
 #
 # Create Bottons based on the Source code - increase version ID by 1.
 #
