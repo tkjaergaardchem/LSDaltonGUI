@@ -3,6 +3,51 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 import sys
+class AboutDialog(QDialog):
+    
+    def __init__(self, *args, **kwargs):
+        super(AboutDialog, self).__init__(*args, **kwargs)
+
+        self.setWindowTitle("About the LSDaltonGUI")
+
+        title = QLabel("LSDaltonGUI")
+        font = title.font()
+        font.setPointSize(20)
+        title.setFont(font)
+        
+        layout = QVBoxLayout()
+        title.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(title)
+
+        logo = QLabel()
+        watermark = QPixmap("john-dalton.jpg")
+        newPixmap = watermark.scaled(QSize(100,100),Qt.KeepAspectRatio)
+        logo.setPixmap(newPixmap)        
+#        widgetDal.setPixmap(QPixmap("john-dalton.jpg") )        
+#        widgetDal.setScaledContents(True)
+        logo.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(logo)
+
+        n1 = QLabel("Version 1.0.0.0")
+        n1.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(n1)
+
+        n2 = QLabel("Made by Thomas Kjaergaard")
+        n2.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(n2)
+
+        #Possible to do this instead
+#        for i in range(0,layout.count()):
+#            layout.itemAt(i)setAlignment(Qt.AlignHCenter)
+        
+        QBtn = QDialogButtonBox.Ok # No Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        layout.addWidget(self.buttonBox)
+        self.setLayout(layout)
+
 class WaveFunc(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -12,10 +57,17 @@ class WaveFunc(QWidget):
 
         layoutWF.addWidget(QLabel("Select the SCF Wave Function Model"))
         #Consider QbuttonGroup to have HF and DFT buttons be exclusive Check Boxes
-        self.widgetWF = QCheckBox("Density Functional Theory (DFT)")
-        self.widgetWF.setStatusTip("The default is Hartree-Fock (HF) when not checked")
-        self.widgetWF.stateChanged.connect(self.wavefunc_state)
-        layoutWF.addWidget(self.widgetWF)
+        
+        self.widgetHF = QCheckBox("Hartree-Fock (HF)")
+        self.widgetHF.setStatusTip("The default is to use Hartree-Fock (HF) SCF method")
+        self.widgetHF.setChecked(True)
+        self.widgetHF.stateChanged.connect(self.wavefunc_state2)
+        layoutWF.addWidget(self.widgetHF)
+
+        self.widgetDFT = QCheckBox("Density Functional Theory (DFT)")
+        self.widgetDFT.setStatusTip("The default is Hartree-Fock (HF) when not checked")
+        self.widgetDFT.stateChanged.connect(self.wavefunc_state)
+        layoutWF.addWidget(self.widgetDFT)
 
         self.widget4 = QComboBox()
         self.widget4.addItems(["LDA","SLATER","B3LYP"])
@@ -33,13 +85,25 @@ class WaveFunc(QWidget):
 
     def wavefunc_state(self, s):
         if(s == Qt.Checked):
-            print("DFT chosen")
-            self.widget4.setVisible(True)
             #Change to DFT with functional 
+            self.widget4.setVisible(True)
+            if(self.widgetHF.isChecked()):
+                self.widgetHF.setChecked(False)            
         else:
-            print("HF chosen")
-            self.widget4.setVisible(False)
             #Change to HF without functional 
+            self.widget4.setVisible(False)
+            if(not self.widgetHF.isChecked()):
+                self.widgetHF.setChecked(True)
+
+    def wavefunc_state2(self, s):
+        if(s == Qt.Checked):
+            #Change to HF without functional 
+            if(self.widgetDFT.isChecked()):
+                self.widgetDFT.setChecked(False)
+        else:
+            #Change to DFT with functional 
+            if(not self.widgetDFT.isChecked()):
+                self.widgetDFT.setChecked(True)
 
     def DFTFUNCTextChanged(self,s):
         print("DFT Functional")
@@ -71,11 +135,6 @@ class Integral(QWidget):
         widget2.stateChanged.connect(self.show_state)
         layoutInt.addWidget(widget2)
 
-#        widget2 = QLabel()
-#        widget2.setPixmap(QPixmap("john-dalton.jpg") )
-#        widget2.setScaledContents(True)
-#        layout.addWidget(widget2)
-#        layout.addWidget(widget2)
         layoutInt.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
         self.setLayout(layoutInt)
 #        self.setCentralWidget(self)
@@ -240,7 +299,12 @@ class MainWindow(QMainWindow):
         #add button to toolbar 
         toolbar.addAction(save_action)
 
+        help_menu = self.menuBar().addMenu("&Help")
         
+        about_action = QAction(QIcon("question-white.png"),"About LSDaltonGUI", self)
+        about_action.setStatusTip("Find out more about LSDaltonGUI")
+        about_action.triggered.connect(self.about)
+        help_menu.addAction(about_action)
 
         
         #adds a label with "Hello" along with Checkbox
@@ -274,6 +338,16 @@ class MainWindow(QMainWindow):
         layoutS = QStackedLayout()
 
         layout1 = QVBoxLayout()
+
+        widgetDal = QLabel()
+        watermark = QPixmap("john-dalton.jpg")
+        newPixmap = watermark.scaled(QSize(50,50),Qt.KeepAspectRatio)
+        widgetDal.setPixmap(newPixmap)        
+#        widgetDal.setPixmap(QPixmap("john-dalton.jpg") )        
+#        widgetDal.setScaledContents(True)
+        layout1.addWidget(widgetDal)
+
+
         widget = QLabel("LSDALTON.INP")
         font = widget.font()
         font.setPointSize(20)
@@ -297,6 +371,7 @@ class MainWindow(QMainWindow):
 
         layoutMain.addLayout(layout1)
 
+        #TAB INSTEAD
         pagelayout.addLayout(button_layout)
         pagelayout.addLayout(layoutS)
 
@@ -375,6 +450,7 @@ class MainWindow(QMainWindow):
 #    def my_custom_fn(self, a):
 #        print(a)
 
+
             
     def onSaveLSDALTON(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save LSDALTON.INP as", "",
@@ -389,6 +465,10 @@ class MainWindow(QMainWindow):
                 print(line)
                 f.write(line)
             f.close()
+
+    def about(self):
+        dlg = AboutDialog()
+        dlg.exec_()
         
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
@@ -407,12 +487,20 @@ app.exec_()
 
 
 # TODO
-# Read LSDALTON.INP and set the checkboxed etc accordingly!
-# Push Label of CheckBox to get more detailed info - citations etc. 
-# Update Display
-# Add Block of Code to LSDALTON.INP file
-# Read xyz file and Create MOLECULE.INP
+#1. Done
+#2. Add QWhatsThis ( to get more detailed info - citations etc. )
+# Update Display func
+# add text to GUILSDALTON.INP (Add Block of Code to LSDALTON.INP file) - Structured!!
+#            addKeyword(".DENSFIT")
+#            addKeyword(".CONVDYN",Real)
+#            etc 
+# remove text to GUILSDALTON.INP (Remove Block of Code to LSDALTON.INP file)
 # 
-# Create Bottons based on the Source code.
-
-#Consider QbuttonGroup to have HF and DFT buttons be exclusive Check Boxes
+# Read xyz file and Create MOLECULE.INP
+# Run lsdalton.x (provide path to lsdalton.x, path to basis set)
+# display run command
+#
+# Create Bottons based on the Source code - increase version ID by 1.
+#
+# Read LSDALTON.INP and set the checkboxed etc accordingly!
+#
