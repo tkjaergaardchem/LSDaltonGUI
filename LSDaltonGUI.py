@@ -190,49 +190,46 @@ class WaveFunc(QWidget):
 
         #*DFT INPUT
         self.layoutWF.addWidget(QLabel("Density Functional Theory Input: Nummerical Grid Input"))
+        self.layoutWF.addWidget(QLabel("Grid Type (Radial and partitioning)"))
         self.layoutWF.addWidget(QLabel("TurboMole Type Grids"))
+        self.widgetGridTypeL0 = QCheckBox("Specify Radial Grid and partitioning")
+        self.widgetGridTypeL0.stateChanged.connect(self.GridTypeL0_select)
+        self.layoutWF.addWidget(self.widgetGridTypeL0)
 
-        self.widgetGRID1 = QCheckBox("TurboMole Type Grid Number 1 (Sloppy)")
-        self.widgetGRID1.stateChanged.connect(self.grid1_select)
-        self.layoutWF.addWidget(self.widgetGRID1)
-        
-        self.widgetGRID2 = QCheckBox("TurboMole Type Grid Number 2")
-        self.widgetGRID2.stateChanged.connect(self.grid2_select)
-        self.layoutWF.addWidget(self.widgetGRID2)
-        
-        self.widgetGRID3 = QCheckBox("TurboMole Type Grid Number 3")
-        self.widgetGRID3.stateChanged.connect(self.grid3_select)
-        self.layoutWF.addWidget(self.widgetGRID3)
-        
-        self.widgetGRID4 = QCheckBox("TurboMole Type Grid Number 4")
-        self.widgetGRID4.stateChanged.connect(self.grid4_select)
-        self.layoutWF.addWidget(self.widgetGRID4)
-        
-        self.widgetGRID5 = QCheckBox("TurboMole Type Grid Number 5 (Tight)")
-        self.widgetGRID5.stateChanged.connect(self.grid5_select)
-        self.layoutWF.addWidget(self.widgetGRID5)
+        self.widgetGridTypeL1 = QComboBox()
+        self.widgetGridTypeL1.addItems(["GC2","LMG","TURBO"])
+        #Set the default value to point to "TURBO" 
+        self.widgetGridTypeL1.setCurrentIndex(2)
+        self.widgetGridTypeL1.currentIndexChanged[str].connect(self.GridTypeL12_select)
+        self.layoutWF.addWidget(self.widgetGridTypeL1)
+        self.widgetGridTypeL2 = QComboBox()
+        self.widgetGridTypeL2.addItems(["SSF","BECKE","BECKEORIG","BLOCK","BLOCKSSF"])
+        #Set the default value to point to "BLOCKSSF" 
+        self.widgetGridTypeL2.setCurrentIndex(4)
+        self.widgetGridTypeL2.currentIndexChanged[str].connect(self.GridTypeL12_select)
+        self.layoutWF.addWidget(self.widgetGridTypeL2)
 
-        self.layoutWF.addWidget(QLabel("Dalton Grids"))
+        self.widgetGRID0 = QCheckBox("Use TurboMole type Grids")
+        self.widgetGRID0.stateChanged.connect(self.GRID0_select)
+        self.layoutWF.addWidget(self.widgetGRID0)
 
-        self.widgetGRIDULTRAC = QCheckBox("Ultra Coarse grid")
-        self.widgetGRIDULTRAC.stateChanged.connect(self.gridULTRAC_select)
-        self.layoutWF.addWidget(self.widgetGRIDULTRAC)
+        self.widgetGRIDL = QComboBox()
+        self.widgetGRIDL.addItems([".GRID1",".GRID2",".GRID3",".GRID4",".GRID5"])
+        #Set the default value to point to "GRID3" 
+        self.widgetGRIDL.setCurrentIndex(2)
+        self.widgetGRIDL.currentIndexChanged[str].connect(self.GRIDL_select)
+        self.layoutWF.addWidget(self.widgetGRIDL)
 
-        self.widgetGRIDCOARSE = QCheckBox("Coarse grid")
-        self.widgetGRIDCOARSE.stateChanged.connect(self.gridCOARSE_select)
-        self.layoutWF.addWidget(self.widgetGRIDCOARSE)
+        self.widgetGRIDD0 = QCheckBox("Use Dalton type Grids")
+        self.widgetGRIDD0.stateChanged.connect(self.GRIDD0_select)
+        self.layoutWF.addWidget(self.widgetGRIDD0)
 
-        self.widgetGRIDNORMAL = QCheckBox("normal grid")
-        self.widgetGRIDNORMAL.stateChanged.connect(self.gridNORMAL_select)
-        self.layoutWF.addWidget(self.widgetGRIDNORMAL)
-
-        self.widgetGRIDFINE = QCheckBox("fine grid")
-        self.widgetGRIDFINE.stateChanged.connect(self.gridFINE_select)
-        self.layoutWF.addWidget(self.widgetGRIDFINE)
-
-        self.widgetGRIDULTRAF = QCheckBox("Ultra fine grid")
-        self.widgetGRIDULTRAF.stateChanged.connect(self.gridULTRAF_select)
-        self.layoutWF.addWidget(self.widgetGRIDULTRAF)
+        self.widgetGRIDDL = QComboBox()
+        self.widgetGRIDDL.addItems([".ULTRAC",".COARSE",".NORMAL",".FINE",".ULTRAF"])
+        #Set the default value to point to "NORMAL" 
+        self.widgetGRIDDL.setCurrentIndex(2)
+        self.widgetGRIDDL.currentIndexChanged[str].connect(self.GRIDDL_select)
+        self.layoutWF.addWidget(self.widgetGRIDDL)
         
         self.layoutWF.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
         #Scroll area which contains scroll_widget which contains the
@@ -370,195 +367,53 @@ class WaveFunc(QWidget):
         else:
             self.parent().parent().RemoveText(".RESTART")
 
-    def grid1_select(self, s):
+
+    def GRID0_select(self, s):
         if(s == Qt.Checked):
-            grids = [self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
+            self.widgetGRIDD0.setChecked(False)
 
             self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".GRID1","*DFT INPUT")
+            self.parent().parent().AddText(self.widgetGRIDL.currentText(),"*DFT INPUT")
         else:
-            self.parent().parent().RemoveText(".GRID1")
+            self.parent().parent().RemoveText(".GRID")
 
-    def grid2_select(self, s):
+    def GRIDL_select(self,s):
+        if(self.widgetGRID0.isChecked()):
+            self.parent().parent().RemoveText(".GRID")
+            self.parent().parent().AddText(self.widgetGRIDL.currentText(),"*DFT INPUT")
+
+    def GRIDD0_select(self, s):
         if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
+            self.widgetGRID0.setChecked(False)
 
             self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".GRID2","*DFT INPUT")
+            self.parent().parent().AddText(self.widgetGRIDDL.currentText(),"*DFT INPUT")
         else:
-            self.parent().parent().RemoveText(".GRID2")
+            self.parent().parent().RemoveText(self.widgetGRIDDL.currentText())
 
-    def grid3_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID2,
-                    self.widgetGRID1,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".GRID3","*DFT INPUT")
-        else:
-            self.parent().parent().RemoveText(".GRID3")
-
-    def grid4_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID2,
-                    self.widgetGRID1,
-                    self.widgetGRID3,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".GRID4","*DFT INPUT")
-        else:
-            self.parent().parent().RemoveText(".GRID4")
-
-    def grid5_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID2,
-                    self.widgetGRID1,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".GRID5","*DFT INPUT")
-        else:
-            self.parent().parent().RemoveText(".GRID5")
-
-    def gridULTRAC_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".ULTRAC","*DFT INPUT")
-        else:
+    def GRIDDL_select(self,s):
+        if(self.widgetGRIDD0.isChecked()):
             self.parent().parent().RemoveText(".ULTRAC")
-
-    def gridCOARSE_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".COARSE","*DFT INPUT")
-        else:
             self.parent().parent().RemoveText(".COARSE")
-
-    def gridNORMAL_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDFINE,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".NORMAL","*DFT INPUT")
-        else:
             self.parent().parent().RemoveText(".NORMAL")
-
-    def gridFINE_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDULTRAF]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".FINE","*DFT INPUT")
-        else:
             self.parent().parent().RemoveText(".FINE")
-
-    def gridULTRAF_select(self, s):
-        if(s == Qt.Checked):
-            grids = [self.widgetGRID1,
-                    self.widgetGRID2,
-                    self.widgetGRID3,
-                    self.widgetGRID4,
-                    self.widgetGRID5,
-                    self.widgetGRIDULTRAC,
-                    self.widgetGRIDCOARSE,
-                    self.widgetGRIDNORMAL,
-                    self.widgetGRIDFINE]
-            for grid in grids:
-                grid.setChecked(False)
-
-            self.parent().parent().AddNewBlock("*DFT INPUT")
-            self.parent().parent().AddText(".ULTRAF","*DFT INPUT")
-        else:
             self.parent().parent().RemoveText(".ULTRAF")
+            self.parent().parent().AddText(self.widgetGRIDDL.currentText(),"*DFT INPUT")
+
+    def GridTypeL0_select(self):
+        if(self.widgetGridTypeL0.isChecked()):
+            self.parent().parent().AddNewBlock("*DFT INPUT")
+            self.parent().parent().AddText(".GRID TYPE","*DFT INPUT")
+            self.parent().parent().AddText(" " + self.widgetGridTypeL1.currentText() + " " + self.widgetGridTypeL2.currentText(),".GRID TYPE")
+        else:
+            self.parent().parent().RemoveTextAndNext(".GRID TYPE")
+
+    def GridTypeL12_select(self,s):
+        if(self.widgetGridTypeL0.isChecked()):
+            self.parent().parent().RemoveTextAndNext(".GRID TYPE")
+            self.parent().parent().AddText(".GRID TYPE","*DFT INPUT")
+            self.parent().parent().AddText(" " + self.widgetGridTypeL1.currentText() + " " + self.widgetGridTypeL2.currentText(),".GRID TYPE")
+
 
             
 # **INTEGRAL TAB        
@@ -566,159 +421,117 @@ class Integral(QWidget):
 
     def __init__(self, *args, **kwargs):
         super(Integral, self).__init__(*args, **kwargs)
+
+        self.scroll_layoutInt = QVBoxLayout()
+        self.layoutInt = QVBoxLayout()
+        self.scroll_widgetInt = QWidget(self)
+        self.scroll_widgetInt.setLayout(self.layoutInt)
+
+        self.layoutInt.addWidget(QLabel("Integral and Performance Specific Keywords"))
+
+        self.widgetDF = QCheckBox("Use density-fitting for Coulomb Integrals")
+        self.widgetDF.setStatusTip("Recommended for performance reasons")
+        self.widgetDF.stateChanged.connect(self.show_state)
+        self.layoutInt.addWidget(self.widgetDF)
+
+        self.widgetINTTHR = QCheckBox("Integral Screening Threshold")
+        self.widgetINTTHR.setStatusTip("The overall screening threshold for integral evaluation.")
+        self.widgetINTTHR.setWhatsThis("The overall screening threshold for integral evaluation. The various integral-evaluation thresholds (below) are set according to this Threshold. The Screening threshold used for Coulomb is this Threshold multiplied by 10e-2 (Default: 10e-10). The Screening threshold used for Exchange is this Threshold (Default: 10e-8). The Screening threshold used for One-electron operators is this Threshold multiplied by 10e-7 (Default: 10e-15)")
+        self.widgetINTTHR.stateChanged.connect(self.INTTHR_select)
+        self.layoutInt.addWidget(self.widgetINTTHR)
+
+        self.widgetINTTHRVAL = QDoubleSpinBox()
+        self.widgetINTTHRVAL.setMinimum(0.0)
+        self.widgetINTTHRVAL.setMaximum(10000.0)
+        self.widgetINTTHRVAL.setDecimals(16)
+        self.widgetINTTHRVAL.setValue(0.00000001)
+        self.widgetINTTHRVAL.setSingleStep(0.0000000001)
+        self.widgetINTTHRVAL.valueChanged.connect(self.INTTHR_value)
+        self.layoutInt.addWidget(self.widgetINTTHRVAL)
         
-        layoutInt = QVBoxLayout()
 
-        layoutInt.addWidget(QLabel("Integral and Performance Specific Keywords"))
+        self.widgetNOCS = QCheckBox("Deactivate Cauchy-Schwarz screening")
+        self.widgetNOCS.setStatusTip("Not Recommended as this will slow down the code.")
+        self.widgetNOCS.stateChanged.connect(self.NOCS_select)
+        self.layoutInt.addWidget(self.widgetNOCS)
+        
+        self.layoutInt.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+        #self.setLayout(self.layoutInt)
 
-        widget2 = QCheckBox("Use density-fitting for Coulomb Integrals")
-# 1. option
-#        widget2.setChecked(True)
-# 2. option
-#        widget2.setCheckState(Qt.Checked)
-# 3. option
-#        widget2.setCheckState(Qt.PartiallyChecked)
-# 4. option
-#        widget2.setCheckState(Qt.Checked)
-#        widget2.setTristate(True)
-        #connect signal to show_state function defined below
-        widget2.setStatusTip("Recommended for performance reasons")
-        widget2.stateChanged.connect(self.show_state)
-        layoutInt.addWidget(widget2)
-
-        layoutInt.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
-        self.setLayout(layoutInt)
-#        self.setCentralWidget(self)
+        self.scroll_areaInt = QScrollArea()
+        self.scroll_areaInt.setWidget(self.scroll_widgetInt)
+        self.scroll_layoutInt.addWidget(self.scroll_areaInt)
+        
+        self.setLayout(self.scroll_layoutInt)
         
 
     def show_state(self, s):
         if(s == Qt.Checked):
-#            print( s == Qt.Checked )
-            # add DENSFIT else            
             self.parent().parent().AddNewBlock("**INTEGRAL")
             self.parent().parent().AddText(".DENSFIT","**INTEGRAL")
         else:
             self.parent().parent().RemoveText(".DENSFIT")
-            
-        
+
+    def NOCS_select(self, s):
+        if(s == Qt.Checked):
+            self.parent().parent().AddNewBlock("**INTEGRAL")
+            self.parent().parent().AddText(".NO SCREEN","**INTEGRAL")
+        else:
+            self.parent().parent().RemoveText(".NO SCREEN")
+
+    def INTTHR_select(self, s):
+        if(s == Qt.Checked):
+            self.parent().parent().AddNewBlock("**INTEGRAL")
+            self.parent().parent().AddText(".THRESH","**INTEGRAL")
+            self.parent().parent().AddDouble(str(self.widgetINTTHRVAL.value()),".THRESH")
+        else:
+            self.parent().parent().RemoveTextAndNext(".THRESH")
+
+    def INTTHR_value(self, d):
+        if(self.widgetINTTHR.isChecked()):
+            self.parent().parent().RemoveTextAndNext(".THRESH")
+            self.parent().parent().AddText(".THRESH","**INTEGRAL")
+            self.parent().parent().AddDouble(str(self.widgetINTTHRVAL.value()),".THRESH")
+
 # **Other TAB        
 class Other(QWidget):
 
     def __init__(self, *args, **kwargs):
         super(Other, self).__init__(*args, **kwargs)
+
+        pass
+#        layout = QVBoxLayout()
+#        layoutStack.addLayout(layout)
+#        layout.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+#
+#        self.setLayout(layout)
+
+# **Other TAB        
+class DEC(QWidget):
+
+    def __init__(self, *args, **kwargs):
+        super(DEC, self).__init__(*args, **kwargs)
         
         layout = QVBoxLayout()
-
-        widget2 = QCheckBox("Dynamic Density Optimization Threshold")
-        widget2.stateChanged.connect(self.show_convdyn_state)
-        layout.addWidget(widget2)
-
-        widget4 = QComboBox()
-        widget4.addItems(["SLOPP","STAND","TIGHT","VTIGH"])
-        #Set the default value to point to "STAND" 
-        widget4.setCurrentIndex(1)
-        #Signal
-        widget4.currentIndexChanged.connect(self.DynThresholdIndexChanged)
-        widget4.currentIndexChanged[str].connect(self.DynThresholdTextChanged)
-        layout.addWidget(widget4)
-
-        widget5 = QListWidget()
-        widget5.addItems(["One","Two","Three"])
-        #Signal
-        widget5.currentItemChanged.connect(self.ItemChanged)
-        widget5.currentTextChanged[str].connect(self.TextChanged)
-        layout.addWidget(widget5)
-
-        #Single line of text
-        widget6 = QLineEdit()
-        widget6.setMaxLength(10)
-        widget6.setPlaceholderText("Enter your text (max 10 characters)")
-        #make the line read only
-        widget6.returnPressed.connect(self.return_pressed)
-        widget6.selectionChanged.connect(self.selection_changed)
-        widget6.textChanged.connect(self.text_changed)
-        #text Edited only give signal when the user changes the text
-        #not when the program changes the text. 
-        widget6.textEdited.connect(self.text_edited)
-#        widget6.setReadOnly(True)
-        layout.addWidget(widget6)
-
-        widget9 = QSpinBox()
-        widget9.setMinimum(-10)
-        widget9.setMaximum(3)
-        widget9.setPrefix("$")
-        widget9.setSuffix("c")
-        widget9.setSingleStep(1)
-#        widget9.valueChanged.connect(self.value_changed)
-#        widget9.valueChanged[str].connect(self.value_changed_str)
-        layout.addWidget(widget9)
-
-        widget10 = QDoubleSpinBox()
-        widget10.setMinimum(-10.0)
-        widget10.setMaximum(3.0)
-        widget10.setPrefix("$")
-        widget10.setSuffix("c")
-        widget10.setSingleStep(0.3)
-#        widget9.valueChanged.connect(self.value_changed)
-#        widget9.valueChanged[str].connect(self.value_changed_str)
-        layout.addWidget(widget10)
-
-#        layoutStack.addLayout(layout)
+        layout.addWidget(QLabel("Divide-Expand-Consolidate Keywords"))
+        
         layout.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
-
+        
         self.setLayout(layout)
-#        self.setCentralWidget(self)
         
+# **Other TAB        
+class CC(QWidget):
 
-    def show_convdyn_state(self, s):
-        print(s)
-        if(s == Qt.Checked):
-            print( s == Qt.Checked )
-            # add DENSFIT else
-            print("add CONVDYN")
-        else:
-            print("remove CONVDYN")
-            
-    def wavefunc_state(self, s):
-        if(s == Qt.Checked):
-            print("DFT chosen")
-        else:
-            print("HF chosen")            
+    def __init__(self, *args, **kwargs):
+        super(CC, self).__init__(*args, **kwargs)
 
-    def show_state(self, s):
-        print( s == Qt.Checked )
-        print(s)
-
-    def DynThresholdIndexChanged(self,i):
-        print(i)
-
-    def DynThresholdTextChanged(self,s):
-        print(s)
-
-    def ItemChanged(self, i):
-        print(i)
-
-    def TextChanged(self,s):
-        print(s)
-
-    def return_pressed(self):
-        print("return pressed!")
-#        print(self.centralWidget().setText("Boom"))
-
-    def selection_changed(self):
-        print("selection changed")
-#        print(self.centralWidget().selectedText())
-# DO NOT KNOW HOW TO ACCESS selectedText of instance of the central widget - widget instance 
-
-    def text_changed(self,s):
-        print("text changed")
-        print(s)
-
-    def text_edited(self,s):
-        print("text edited")
-        print(s)
-
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Conventional Coupled Cluster Keywords"))
         
+        layout.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+        
+        self.setLayout(layout)
+
 # The Main GUI 
 # Subclass QMainWindow to customise the application's main window
 class MainWindow(QMainWindow):
@@ -848,11 +661,17 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(btn2)
         layoutS.addWidget(Integral())
 
-        btn3 = QPushButton( "**Other")
+        btn3 = QPushButton( "**CC")
         btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(2) )
         button_layout.addWidget(btn3)
-        layoutS.addWidget(Other())
+        layoutS.addWidget(CC())
 
+        btn3 = QPushButton( "**DEC")
+        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(3) )
+        button_layout.addWidget(btn3)
+        layoutS.addWidget(DEC())
+
+        #Set tab to point to WAVE FUNCTION
         layoutS.setCurrentIndex(0)
         layoutMain.addLayout(pagelayout)
         
