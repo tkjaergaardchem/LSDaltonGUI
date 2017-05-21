@@ -176,7 +176,7 @@ class WaveFunc(QWidget):
         self.widgetRH.stateChanged.connect(self.RH_select)
         self.layoutWF.addWidget(self.widgetRH)
 
-        self.widgetDIIS = QCheckBox("Activate Direct inversion in the iterative subspace (DIIS) accelaration")
+        self.widgetDIIS = QCheckBox("Activate Direct inversion in the iterative subspace (DIIS) accelaration (Require .RH)")
         self.widgetDIIS.stateChanged.connect(self.DIIS_select)
         self.layoutWF.addWidget(self.widgetDIIS)
 
@@ -191,7 +191,6 @@ class WaveFunc(QWidget):
         #*DFT INPUT
         self.layoutWF.addWidget(QLabel("Density Functional Theory Input: Nummerical Grid Input"))
         self.layoutWF.addWidget(QLabel("Grid Type (Radial and partitioning)"))
-        self.layoutWF.addWidget(QLabel("TurboMole Type Grids"))
         self.widgetGridTypeL0 = QCheckBox("Specify Radial Grid and partitioning")
         self.widgetGridTypeL0.stateChanged.connect(self.GridTypeL0_select)
         self.layoutWF.addWidget(self.widgetGridTypeL0)
@@ -350,13 +349,18 @@ class WaveFunc(QWidget):
 
             self.parent().parent().AddNewBlock("*DENSOPT")
             self.parent().parent().AddText(".RH","*DENSOPT")
+            if(self.widgetDIIS.isChecked()):
+                self.parent().parent().AddText(".DIIS",".RH")                
+
         else:
             self.parent().parent().RemoveText(".RH")
+            if(self.widgetDIIS.isChecked()):
+                self.widgetDIIS.setChecked(False)
 
     def DIIS_select(self, s):
         if(s == Qt.Checked):
-            self.parent().parent().AddNewBlock("*DENSOPT")
-            self.parent().parent().AddText(".DIIS","*DENSOPT")
+            if(self.widgetRH.isChecked()):
+                self.parent().parent().AddText(".DIIS",".RH")
         else:
             self.parent().parent().RemoveText(".DIIS")
 
