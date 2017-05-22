@@ -651,32 +651,42 @@ class MainWindow(QMainWindow):
 
         #TAB INSTEAD
         pagelayout.addLayout(button_layout)
+        tabs = QTabWidget()
+        tabs.setDocumentMode(True)
+        tabs.setTabPosition(QTabWidget.North)
+        tabs.setMovable(True)
         pagelayout.addLayout(layoutS)
 
-        btn1 = QPushButton( "**WAVE FUNCTION")
-        btn1.pressed.connect( lambda n=0: layoutS.setCurrentIndex(0) )
-        btn1.setStatusTip("Select the SCF wave function model")
-        button_layout.addWidget(btn1)
-        layoutS.addWidget(WaveFunc())
+#        btn1 = QPushButton( "**WAVE FUNCTION")
+#        btn1.pressed.connect( lambda n=0: layoutS.setCurrentIndex(0) )
+#        btn1.setStatusTip("Select the SCF wave function model")
+#        button_layout.addWidget(btn1)
+#        layoutS.addWidget(WaveFunc())
+        tabs.addTab( WaveFunc(), "**WAVE FUNCTION")
+        tabs.addTab( Integral(), "**INTEGRALS")
 
-        btn2 = QPushButton( "**INTEGRALS")
-        btn2.pressed.connect( lambda n=1: layoutS.setCurrentIndex(1) )
-        btn2.setStatusTip("Select the integral evaluation specifications")
-        button_layout.addWidget(btn2)
-        layoutS.addWidget(Integral())
+#        btn2 = QPushButton( "**INTEGRALS")
+#        btn2.pressed.connect( lambda n=1: layoutS.setCurrentIndex(1) )
+#        btn2.setStatusTip("Select the integral evaluation specifications")
+#        button_layout.addWidget(btn2)
+#        layoutS.addWidget(Integral())
 
-        btn3 = QPushButton( "**CC")
-        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(2) )
-        button_layout.addWidget(btn3)
-        layoutS.addWidget(CC())
+        tabs.addTab( CC(), "**CC")
+        tabs.addTab( DEC(), "**DEC")
 
-        btn3 = QPushButton( "**DEC")
-        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(3) )
-        button_layout.addWidget(btn3)
-        layoutS.addWidget(DEC())
+#        btn3 = QPushButton( "**CC")
+#        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(2) )
+#        button_layout.addWidget(btn3)
+#        layoutS.addWidget(CC())
+
+#        btn3 = QPushButton( "**DEC")
+#        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(3) )
+#        button_layout.addWidget(btn3)
+#        layoutS.addWidget(DEC())
 
         #Set tab to point to WAVE FUNCTION
-        layoutS.setCurrentIndex(0)
+#        layoutS.setCurrentIndex(0)
+        layoutS.addWidget(tabs)
         layoutMain.addLayout(pagelayout)
         
         #Widget which consist of the widgets in the layout
