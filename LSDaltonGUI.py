@@ -596,7 +596,7 @@ class MainWindow(QMainWindow):
 
         #Qaction instance create from Q object to act as parent of the action
         #here the mainwindow is passed as the parent action
-        readmol_action = QAction(QIcon("disk--arrow.png"),"Read", self)
+        readmol_action = QAction(QIcon("molecule.png"),"Read", self)
         readmol_action.setStatusTip("Read xyz file and create MOLECULE.INP")
         #"triggered" signal is sent when Qaction is clicked
         #save_action.triggered.connect(lambda outfile=outfile: self.onSaveLSDALTON(outfile))
