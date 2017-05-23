@@ -656,6 +656,7 @@ class MainWindow(QMainWindow):
         btn1 = QPushButton( "**WAVE FUNCTION")
         btn1.pressed.connect( lambda n=0: layoutS.setCurrentIndex(0) )
         btn1.setStatusTip("Select the SCF wave function model")
+#        btn1.setCheckable(True)
         button_layout.addWidget(btn1)
         layoutS.addWidget(WaveFunc())
 
@@ -884,19 +885,3 @@ app.exec_()
 
 
 
-# TODO
-#1. Done
-#2. Done
-#3. Done
-#4. Done
-#5. Keyword and Threshold or     addTextReal(".CONVTHR",Real)
-#6. Keyword and List Variable    addKeyword(".CONVDYN",List)
-#6. SubTab *DENSOPT
-#7. Read xyz file and Create MOLECULE.INP
-#8. Run lsdalton.x (provide path to lsdalton.x, path to basis set)
-#9.  display run command
-#
-# Create Bottons based on the Source code - increase version ID by 1.
-#
-# Read LSDALTON.INP and set the checkboxed etc accordingly!
-#
