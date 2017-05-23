@@ -22,3 +22,6 @@ Add the functionality of running lsdalton.x
 
 Add python script that create the GUI based on the source code
 
+## Icons
+
+Icons have been imported from https://github.com/yusukekamiyamane/fugue-icons
