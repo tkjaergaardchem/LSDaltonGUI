@@ -12,9 +12,9 @@ no Citations required
 
 ## Screenshots:
 
-<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/ScreenShotInitial.png" align="top" width="600" height="480">
-<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/ScreenShotSecond.png" align="top" width="600" height="480">
+<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/blob/master/ScreenShotInitial.png" align="top" width="600" height="480">
 
+<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/blob/master/ScreenShotSecond.png" align="top" width="600" height="480">
 
 ## Remaining tasks:
 
