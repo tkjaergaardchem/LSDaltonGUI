@@ -10,6 +10,12 @@ homepage to be created
 
 no Citations required
 
+## Screenshots:
+
+<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/ScreenShotInitial.png" align="top" width="600" height="480">
+<img src="https://github.com/tkjaergaardchem/LSDaltonGUI/ScreenShotSecond.png" align="top" width="600" height="480">
+
+
 ## Remaining tasks:
 
 Add the functionality to read an xyz file and create a MOLECULE.INP

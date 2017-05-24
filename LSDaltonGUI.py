@@ -44,7 +44,6 @@ class BasisSetPage(QWizardPage):
         self.setLayout(layout)
         self.registerField("BasisSet", widgetBasisSet) 
 
-
 class QHLine(QFrame):
     def __init__(self, *args, **kwargs):
         super(QHLine, self).__init__(*args, **kwargs)
@@ -797,10 +796,14 @@ class MainWindow(QMainWindow):
         #xyzwizard.addPage(Charge())
         xyzwizard.setWindowTitle("xyz2mol Wizard")
         xyzwizard.exec_()
-        print(xyzwizard.field("BasisSet"))
 
-        self.widgetMolLab.setVisible(True)
-        self.widgetMolFile.setVisible(True)
+        #if the basis have been set correctly
+        #(This should be on Finished event but cannot get that working)
+        if(xyzwizard.field("BasisSet")):        
+            self.widgetMolLab.setVisible(True)
+            self.widgetMolFile.setVisible(True)
+            
+            
         
 #            self.molfile = open('GUIMOLECULE.INP', 'w') 
         
