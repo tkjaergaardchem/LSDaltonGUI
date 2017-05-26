@@ -22,27 +22,11 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+import numpy as np
 
 import sys
 
 #Icons have been imported from https://github.com/yusukekamiyamane/fugue-icons
-#LSDalton GUI About Dialog Box 
-class BasisSetPage(QWizardPage):
-    
-    def __init__(self, *args, **kwargs):
-        super(BasisSetPage, self).__init__(*args, **kwargs)
-        self.setTitle('Basis set')
-        self.setSubTitle('Setup Basis set used for molecule')
-
-        layout = QGridLayout()
-        widgetBasisSet = QLineEdit()
-        widgetBasisSet.setMaxLength(10)
-        widgetBasisSet.setPlaceholderText("Enter your text (max 10 characters)")
-        
-        layout.addWidget(QLabel("BasisSet: "),0,0)
-        layout.addWidget(widgetBasisSet,0,1)
-        self.setLayout(layout)
-        self.registerField("BasisSet", widgetBasisSet) 
 
 class QHLine(QFrame):
     def __init__(self, *args, **kwargs):
@@ -528,7 +512,6 @@ class Other(QWidget):
 #
 #        self.setLayout(layout)
 
-# **Other TAB        
 class DEC(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -536,11 +519,62 @@ class DEC(QWidget):
         
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Divide-Expand-Consolidate Keywords"))
-        
+
         layout.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
         
         self.setLayout(layout)
+
+class MOL(QWidget):
+    def __init__(self, *args, **kwargs):
+        super(MOL, self).__init__(*args, **kwargs)
         
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("MOLECULE.INP information"))
+
+#        widgetatombasis = QCheckBox("Atom specific basis set")
+#        widgetatombasis.stateChanged.connect(self.atombasis_select)
+#        layout.addWidget(widgetatombasis)
+
+        layout.addWidget(QLabel("Choose Basis set"))
+        widget = QLineEdit()
+        widget.setMaxLength(100)
+        widget.setPlaceholderText("Enter basis set name")
+        widget.returnPressed.connect(self.return_pressed)
+#        widget.selectionChanged.connect(self.selection_changed)
+        widget.textChanged.connect(self.text_changed)
+        widget.textEdited.connect(self.text_edited)
+        layout.addWidget(widget)
+
+        layout.addWidget(QLabel("Molecular Charge:"))
+        widgetCharge = QDoubleSpinBox()
+        widgetCharge.setMinimum(-10000.0)
+        widgetCharge.setMaximum(10000.0)
+        widgetCharge.setDecimals(10)
+        widgetCharge.setValue(0.0)
+        widgetCharge.setSingleStep(1.0000000)
+        widgetCharge.valueChanged.connect(self.charge_value)
+        layout.addWidget(widgetCharge)
+
+        layout.setAlignment(Qt.AlignTop| Qt.AlignVCenter)
+        
+        self.setLayout(layout)
+
+    def charge_value(self,d):
+        self.parent().parent().molcharge = d
+        self.parent().parent().UpdateWidgetMolFile()
+    
+    def return_pressed(self):
+        self.parent().parent().UpdateWidgetMolFile()
+
+#    def selection_changed(self):
+#        self.parent().parent().UpdateWidgetMolFile()
+        
+    def text_changed(self, s):
+        self.parent().parent().basisset = s
+            
+    def text_edited(self, s):
+        self.parent().parent().basisset = s
+
 # **Other TAB        
 class CC(QWidget):
 
@@ -579,7 +613,7 @@ class MainWindow(QMainWindow):
 
         #Qaction instance create from Q object to act as parent of the action
         #here the mainwindow is passed as the parent action
-        save_action = QAction(QIcon("disk-black.png"),"Save", self)
+        save_action = QAction(QIcon("disk-black.png"),"Save LSDALTON.INP file", self)
         #
         save_action.setStatusTip("Save LSDALTON.INP file")
         #"triggered" signal is sent when Qaction is clicked
@@ -604,9 +638,17 @@ class MainWindow(QMainWindow):
         save_action.setShortcut(QKeySequence.Open)
         toolbar.addAction(readmol_action)
 
+        #Qaction instance create from Q object to act as parent of the action
+        #here the mainwindow is passed as the parent action
+        savemol_action = QAction(QIcon("disk.png"),"Save MOLECULE.INP file", self)
+        savemol_action.setStatusTip("Save MOLECULE.INP file")
+        savemol_action.triggered.connect(self.onSaveMOLECULE)
+        toolbar.addAction(savemol_action)        
+
         #add action (same as for toolbar)
         file_menu.addAction(save_action)
         file_menu.addAction(readmol_action)
+        file_menu.addAction(savemol_action)
         #horisontal line to seperate menu items
         #        file_menu.addSeparator()
         #        file_submenu = file_menu.addMenu("Submenu")
@@ -643,7 +685,7 @@ class MainWindow(QMainWindow):
 
         pagelayout = QVBoxLayout()
         button_layout = QHBoxLayout()
-        layoutS = QStackedLayout()
+        self.layoutS = QStackedLayout()
 
         layout1 = QVBoxLayout()
 
@@ -694,33 +736,38 @@ class MainWindow(QMainWindow):
 
         #TAB INSTEAD
         pagelayout.addLayout(button_layout)
-        pagelayout.addLayout(layoutS)
+        pagelayout.addLayout(self.layoutS)
 
         btn1 = QPushButton( "**WAVE FUNCTION")
-        btn1.pressed.connect( lambda n=0: layoutS.setCurrentIndex(0) )
+        btn1.pressed.connect( lambda n=0: self.layoutS.setCurrentIndex(0) )
         btn1.setStatusTip("Select the SCF wave function model")
-#        btn1.setCheckable(True)
         button_layout.addWidget(btn1)
-        layoutS.addWidget(WaveFunc())
+        self.layoutS.addWidget(WaveFunc())
 
         btn2 = QPushButton( "**INTEGRALS")
-        btn2.pressed.connect( lambda n=1: layoutS.setCurrentIndex(1) )
+        btn2.pressed.connect( lambda n=1: self.layoutS.setCurrentIndex(1) )
         btn2.setStatusTip("Select the integral evaluation specifications")
         button_layout.addWidget(btn2)
-        layoutS.addWidget(Integral())
+        self.layoutS.addWidget(Integral())
 
         btn3 = QPushButton( "**CC")
-        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(2) )
+        btn3.pressed.connect( lambda n=2: self.layoutS.setCurrentIndex(2) )
         button_layout.addWidget(btn3)
-        layoutS.addWidget(CC())
+        self.layoutS.addWidget(CC())
 
-        btn3 = QPushButton( "**DEC")
-        btn3.pressed.connect( lambda n=2: layoutS.setCurrentIndex(3) )
-        button_layout.addWidget(btn3)
-        layoutS.addWidget(DEC())
+        btn4 = QPushButton( "**DEC")
+        btn4.pressed.connect( lambda n=2: self.layoutS.setCurrentIndex(3) )
+        button_layout.addWidget(btn4)
+        self.layoutS.addWidget(DEC())
+
+        self.molbtn = QPushButton( "MOL")
+        self.molbtn.pressed.connect( lambda n=2: self.layoutS.setCurrentIndex(4) )
+        self.molbtn.setVisible(False)
+        button_layout.addWidget(self.molbtn)
+        self.layoutS.addWidget(MOL())
 
         #Set tab to point to WAVE FUNCTION
-        layoutS.setCurrentIndex(0)
+        self.layoutS.setCurrentIndex(0)
         layoutMain.addLayout(pagelayout)
         
         #Widget which consist of the widgets in the layout
@@ -788,25 +835,86 @@ class MainWindow(QMainWindow):
         filename, _ = QFileDialog.getOpenFileName(self, "Open xyz file", "",
                                                   "All files (*.xyz)")
         
-        xyzwizard = QWizard()
-        #Add ATOMS BASIS
-        #        xyzwizard.addPage(BasisSetPage(xyzwizard))
-        BasisSetPageIns = BasisSetPage()
-        xyzwizard.addPage(BasisSetPageIns)
-        #xyzwizard.addPage(Charge())
-        xyzwizard.setWindowTitle("xyz2mol Wizard")
-        xyzwizard.exec_()
-
-        #if the basis have been set correctly
-        #(This should be on Finished event but cannot get that working)
-        if(xyzwizard.field("BasisSet")):        
+        if filename:
+            #if the basis have been set correctly
+            #(This should be on Finished event but cannot get that working)
             self.widgetMolLab.setVisible(True)
             self.widgetMolFile.setVisible(True)
+            self.molbtn.setVisible(True)
+
+            atoms=['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar',
+                   'K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br',
+                   'Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te',
+                   'I','Xe',]
             
+            xyzfile = open(filename, 'r')
+
+            lines = []
+            for line in xyzfile:
+                lines.append(line)
+
+            xyzfile.close()
+
+            # Get number of atoms:
+            try:
+                natoms = int(lines[0])
+            except:
+                print('file: '+filename+' does not fit the required format')
+
+            titl1="MOLECULE.INP file created using the LSDaltonGUI program"
+            titl2=""
+            # Check for title:
+            title=str(lines[1])
+            if (title!=''):
+                if (titl1=='\n'):
+                    titl1=title
+                elif (titl2=='\n'):
+                    titl2=title
+                    
+            coord=np.zeros((natoms,3))
+                    
+            o=2
+            labels=[]
+            Atomtypes=[]
+            for i in range(natoms):
+                line = lines[i+o].split()
+                atom = line[0]
+                if (atom not in labels):
+                    Atomtypes.append(atom)
+                    
+                labels.append(atom)
+
+                for x in range(3):
+                    coord[i,x] = float(line[x+1])
+
+            self.nAtomtypes = len(Atomtypes)
+            totch = '0'
+            self.molcharge = 0
+            self.basisset = 'cc-pVDZ'
+            self.molfile = open('GUIMOLECULE.INP','w')
+            self.molfile.write('BASIS\n')
+            self.molfile.write(self.basisset+'\n')
+            self.molfile.write(titl1+'\n')
+            self.molfile.write(titl2+'\n')
+            self.molfile.write('Atomtypes='+str(len(Atomtypes))+' Nosymmetry Angstrom Charge='+totch+'\n')
+            for atype in Atomtypes:
+                try:
+                    charge=str(atoms.index(atype)+1)
+                    natomtype=str(labels.count(atype))
+                except ValueError:
+                    print "Atom "+atype+" is not regognized"                    
+
+                self.molfile.write('Charge='+charge+' Atoms='+natomtype+'\n')
+
+                for i in range(natoms):
+                    if (labels[i] == atype):
+                        self.molfile.write((labels[i]+'  {0:10.6f}  {1:10.6f}  {2:10.6f} \n').format(coord[i,0],coord[i,1],coord[i,2]))
+                        
+            self.molfile.close()                    
+            self.UpdateWidgetMolFile()
+            self.layoutS.setCurrentIndex(4)
+
             
-        
-#            self.molfile = open('GUIMOLECULE.INP', 'w') 
-        
     def onSaveLSDALTON(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save LSDALTON.INP as", "",
                                                   "All files (*.*)")
@@ -817,7 +925,19 @@ class MainWindow(QMainWindow):
             f=open(filename, 'w')
             for line in self.outfile:
                 f.write(line)
-#                f.write("\n")
+            f.close()
+            self.outfile.close()
+
+    def onSaveMOLECULE(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "Save MOLECULE.INP as", "",
+                                                  "All files (*.*)")
+        print(filename)
+        if filename:
+            print("filename success")
+            self.outfile = open('GUIMOLECULE.INP', 'r') 
+            f=open(filename, 'w')
+            for line in self.outfile:
+                f.write(line)
             f.close()
             self.outfile.close()
 
@@ -938,8 +1058,20 @@ class MainWindow(QMainWindow):
     def UpdateWidgetMolFile(self):
         self.widgetMolFile.clear()
         self.molfile = open('GUIMOLECULE.INP', 'r') 
+        skip = False
         for line in self.molfile:
-            self.widgetMolFile.append(line.strip())
+            if("BASIS" in line):
+                self.widgetMolFile.append('BASIS')
+                skip = True
+            else:                
+                if(skip):
+                    skip = False
+                    self.widgetMolFile.append(self.basisset)
+                else:
+                    if("Angstrom Charge" in line):
+                        self.widgetMolFile.append('Atomtypes='+str(self.nAtomtypes)+' Nosymmetry Angstrom Charge='+str(self.molcharge))
+                    else:
+                        self.widgetMolFile.append(line.strip())
         self.molfile.close()
 
 # You need one (and only one) QApplication instance per application.
