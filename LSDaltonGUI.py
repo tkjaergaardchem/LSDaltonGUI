@@ -475,8 +475,12 @@ class Integral(QWidget):
         if(s == Qt.Checked):
             self.parent().parent().AddNewBlock("**INTEGRAL")
             self.parent().parent().AddText(".DENSFIT","**INTEGRAL")
+            self.parent().parent().MOL.widgetAu.setChecked(True)
         else:
             self.parent().parent().RemoveText(".DENSFIT")
+#            self.parent().parent().MOL.widgetAu.setChecked(False)
+#            self.parent().parent().useaux = False
+        self.parent().parent().UpdateWidgetMolFile()
 
     def NOCS_select(self, s):
         if(s == Qt.Checked):
@@ -545,6 +549,20 @@ class MOL(QWidget):
         widget.textEdited.connect(self.text_edited)
         layout.addWidget(widget)
 
+        self.widgetAu = QCheckBox("Use Auxiliary Basis set (used for density fitting)")
+        self.widgetAu.stateChanged.connect(self.Au_use)        
+        layout.addWidget(self.widgetAu)
+
+        layout.addWidget(QLabel("Choose Auxiliary Basis set"))
+        widget = QLineEdit()
+        widget.setMaxLength(100)
+        widget.setPlaceholderText("Enter Aux basis set name")
+        widget.returnPressed.connect(self.return_pressed)
+#        widget.selectionChanged.connect(self.selection_changed)
+        widget.textChanged.connect(self.auxtext_changed)
+        widget.textEdited.connect(self.auxtext_edited)
+        layout.addWidget(widget)
+        
         layout.addWidget(QLabel("Molecular Charge:"))
         widgetCharge = QDoubleSpinBox()
         widgetCharge.setMinimum(-10000.0)
@@ -575,6 +593,20 @@ class MOL(QWidget):
     def text_edited(self, s):
         self.parent().parent().basisset = s
 
+    def auxtext_changed(self, s):
+        self.parent().parent().auxbasisset = s
+            
+    def auxtext_edited(self, s):
+        self.parent().parent().auxbasisset = s
+
+    def Au_use(self, s):
+        if(s == Qt.Checked):
+            if(not self.parent().parent().useaux):
+                self.parent().parent().useaux = True
+        else:
+                self.parent().parent().useaux = False
+        self.parent().parent().UpdateWidgetMolFile()
+        
 # **Other TAB        
 class CC(QWidget):
 
@@ -597,7 +629,10 @@ class MainWindow(QMainWindow):
         self.outfile = open('GUILSDALTON.INP', 'w') 
         f2 = open('TMPGUILSDALTON.INP', 'w') 
         self.setWindowTitle("LSDalton GUI")
+        self.molloaded = False
+        self.useaux = False
 
+        self.MOL = MOL()
         #create instance of toolbar 
         toolbar = QToolBar("The main LSDalton toolbar")
         toolbar.setIconSize(QSize(16,16))
@@ -764,7 +799,7 @@ class MainWindow(QMainWindow):
         self.molbtn.pressed.connect( lambda n=2: self.layoutS.setCurrentIndex(4) )
         self.molbtn.setVisible(False)
         button_layout.addWidget(self.molbtn)
-        self.layoutS.addWidget(MOL())
+        self.layoutS.addWidget(self.MOL)
 
         #Set tab to point to WAVE FUNCTION
         self.layoutS.setCurrentIndex(0)
@@ -836,6 +871,7 @@ class MainWindow(QMainWindow):
                                                   "All files (*.xyz)")
         
         if filename:
+            self.molloaded = True
             #if the basis have been set correctly
             #(This should be on Finished event but cannot get that working)
             self.widgetMolLab.setVisible(True)
@@ -891,9 +927,14 @@ class MainWindow(QMainWindow):
             totch = '0'
             self.molcharge = 0
             self.basisset = 'cc-pVDZ'
+            self.auxbasisset = 'cc-pVDZ-RI'
             self.molfile = open('GUIMOLECULE.INP','w')
             self.molfile.write('BASIS\n')
-            self.molfile.write(self.basisset+'\n')
+            if(self.useaux):
+                self.molfile.write(self.basisset + ' Aux=' + self.auxbasisset + '\n')
+            else:
+                self.molfile.write(self.basisset+'\n')
+                
             self.molfile.write(titl1+'\n')
             self.molfile.write(titl2+'\n')
             self.molfile.write('Atomtypes='+str(len(Atomtypes))+' Nosymmetry Angstrom Charge='+totch+'\n')
@@ -910,7 +951,17 @@ class MainWindow(QMainWindow):
                     if (labels[i] == atype):
                         self.molfile.write((labels[i]+'  {0:10.6f}  {1:10.6f}  {2:10.6f} \n').format(coord[i,0],coord[i,1],coord[i,2]))
                         
-            self.molfile.close()                    
+            self.molfile.close()
+
+            #Create the TMPGUIMOLECULE.INP file. 
+            f2 = open('TMPGUIMOLECULE.INP', 'w') 
+            self.molfile = open('GUIMOLECULE.INP', 'r') 
+            for line in self.molfile:
+                f2.write(line)
+            f2.truncate()
+            f2.close()        
+            self.molfile.close()
+
             self.UpdateWidgetMolFile()
             self.layoutS.setCurrentIndex(4)
 
@@ -965,6 +1016,15 @@ class MainWindow(QMainWindow):
             self.outfile.write(line)
         self.outfile.truncate()
         self.outfile.close()
+
+    def CopyTmpMolFileToFile(self,f):
+        f.seek(0)
+        self.molfile = open('GUIMOLECULE.INP', 'w') 
+        self.molfile.seek(0)
+        for line in f:
+            self.molfile.write(line)
+        self.molfile.truncate()
+        self.molfile.close()
 
     def RemoveTextAndNext(self, s):
         self.outfile = open('GUILSDALTON.INP', 'r') 
@@ -1056,23 +1116,42 @@ class MainWindow(QMainWindow):
         self.outfile.close()
 
     def UpdateWidgetMolFile(self):
-        self.widgetMolFile.clear()
-        self.molfile = open('GUIMOLECULE.INP', 'r') 
-        skip = False
-        for line in self.molfile:
-            if("BASIS" in line):
-                self.widgetMolFile.append('BASIS')
-                skip = True
-            else:                
-                if(skip):
-                    skip = False
-                    self.widgetMolFile.append(self.basisset)
-                else:
-                    if("Angstrom Charge" in line):
-                        self.widgetMolFile.append('Atomtypes='+str(self.nAtomtypes)+' Nosymmetry Angstrom Charge='+str(self.molcharge))
+        if(self.molloaded):
+            #update the GUIMOLECULE.INP file 
+            self.molfile = open('GUIMOLECULE.INP', 'r')
+            f=open('TMPGUIMOLECULE.INP', 'r+')
+            f.seek(0)
+            skip = False
+            for line in self.molfile:
+                if("BASIS" in line):
+                    f.write('BASIS\n')
+                    skip = True
+                else:                
+                    if(skip):
+                        skip = False
+                        if(self.useaux):
+                            f.write(self.basisset + ' Aux=' + self.auxbasisset + '\n')
+                        else:
+                            f.write(self.basisset+'\n')
                     else:
-                        self.widgetMolFile.append(line.strip())
-        self.molfile.close()
+                        if("Angstrom Charge" in line):
+                            f.write('Atomtypes='+str(self.nAtomtypes)+' Nosymmetry Angstrom Charge='+str(self.molcharge)+'\n')
+                        else:
+                            f.write(line)
+                            
+            f.truncate()
+            f.seek(0)
+            self.molfile.close()
+            self.CopyTmpMolFileToFile(f)
+            f.close()
+            #update the actual widget
+            self.molfile = open('GUIMOLECULE.INP', 'r') 
+            self.widgetMolFile.clear()
+            for line in self.molfile:
+                self.widgetMolFile.append(line.strip())
+            self.molfile.close()        
+            self.widgetMolFile.scrollToAnchor("BASIS")
+    
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
